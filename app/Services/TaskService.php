@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Customer;
 use App\Models\Queue;
+use App\Http\Resources\QueueResource;
+use App\Http\Resources\CustomerResource;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 
@@ -21,19 +23,23 @@ class TaskService
     public function checkBirthdayTask()
     {
         $now = now();
-        
         $userBirthday = $this->customer->whereDay('dob', $now->day)
             ->whereMonth('dob', $now->month)
         ->get();
 
         $this->queueTask('Birthday-'.$now->year,$userBirthday);
+
+        $return['timestamp'] = date('Y-m-d H:i:s e', strtotime($now));
+        $return['user'] = CustomerResource::collection($userBirthday);
+        return $return;
     }
 
     protected function queueTask($type, $users){
         $timezone = config('app.timezone');
 
         foreach ($users as $user) {
-            $userDateTime = Carbon::createFromFormat('H:i', '09:00', $user->current_timezone);
+            $dob = $user->dob.' 09:00:00';
+            $userDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $dob, $user->current_timezone);
             $userUtcTime = $userDateTime->setTimezone($timezone);
             $scheduled_at = $userUtcTime->toDatetimeString();
 
@@ -70,6 +76,12 @@ class TaskService
             $this->queue->whereIn('id', $ids)->update([
                 "sent_at" => date('Y-m-d H:i:s')
             ]);
+
+            $runs = $this->queue->whereIn('id', $ids)->get();
         }
+
+        $return['count'] = count($ids);
+        $return['queue_run'] = QueueResource::collection($runs);
+        return $return;
     }   
 }

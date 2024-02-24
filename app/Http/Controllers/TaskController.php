@@ -19,16 +19,18 @@ class TaskController extends Controller
         $result = $this->taskService->checkBirthdayTask();
 
         return response()->json([
-            'message'=> "queue created!"
+            'message'=> "queue created!",
+            'data'=>$result
         ]);
     }
 
     public function sendTask()
     {
-        $result = $this->taskService->checkBirthdayTask();
+        $result = $this->taskService->sendTask();
 
         return response()->json([
-            'message'=> "task sent!"
+            'message'=> "queue created!",
+            'data'=>$result
         ]);
     }
 }
